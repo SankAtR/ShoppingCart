@@ -10,11 +10,11 @@
 	<bean id="ShopUserDAO"
 		class="com.sanket.hibernate.daoarchitecture.GenericHibernateDAOImpl">
 		<property name="baseClass" value="com.sanket.hibernate.pojos.ShopUser" />
-		<property name="sessionFactory" ref="sessionFactory" />
+		<property name="hibernateTemplate" ref="hibernateTemplate" />
 	</bean>
 	<bean id="ShopUserDetailsDAO"
 		class="com.sanket.hibernate.daoarchitecture.GenericHibernateDAOImpl">
 		<property name="baseClass" value="com.sanket.hibernate.pojos.ShopUserDetails" />
-		<property name="sessionFactory" ref="sessionFactory" />
+		<property name="hibernateTemplate" ref="hibernateTemplate" />
 	</bean>
 </beans>

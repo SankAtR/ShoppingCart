@@ -12,7 +12,4 @@
 
 	<import resource="classpath:dbcontext.xml" />
 
-	<bean id="hibernateTemplate" class="org.springframework.orm.hibernate3.HibernateTemplate">
-		<property name="sessionFactory" ref="sessionFactory" />
-	</bean>
 </beans>  

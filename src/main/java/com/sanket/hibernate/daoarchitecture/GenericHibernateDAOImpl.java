@@ -8,7 +8,9 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.criterion.DetachedCriteria;
 import org.springframework.context.annotation.Scope;
+import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +18,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Scope(value = "prototype")
 public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 	private Class<T> baseClass;
-	private SessionFactory sessionFactory;
+
+	private HibernateTemplate hibernateTemplate;
+
+	public HibernateTemplate getHibernateTemplate() {
+		return hibernateTemplate;
+	}
+
+	public void setHibernateTemplate(HibernateTemplate hibernateTemplate) {
+		this.hibernateTemplate = hibernateTemplate;
+	}
 
 	public GenericHibernateDAOImpl() {
 		super();
@@ -25,33 +36,30 @@ public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 	@Override
 	public String create(T t) {
 		_assertBaseClassSetup(this);
-		Transaction txn = null;
+
 		try {
-			txn = getCurrentSession().beginTransaction();
-			Serializable s = sessionFactory.getCurrentSession().save(t);
-			txn.commit();
+			Serializable s = hibernateTemplate.save(t);
 			return (s == null ? "" : s.toString());
-		}
-		catch (HibernateException e) {
+		} catch (HibernateException e) {
 			throw new Error(e);
-		}
-		finally {
-			if (!txn.wasCommitted()) {
-				txn.rollback();
-			}
+		} finally {
+
 			getCurrentSession().flush();
 		}
+
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public T retrieveUsingID(String rowID) {
 		_assertBaseClassSetup(this);
-		List<T> entities = sessionFactory.getCurrentSession().createQuery(new StringBuilder("from ").append(baseClass.getSimpleName()).append(" as e where e.rowId='").append(rowID).append("'").toString()).list();
+		List<T> entities = hibernateTemplate.find(new StringBuilder("from ")
+				.append(baseClass.getSimpleName())
+				.append(" as e where e.rowId='").append(rowID).append("'")
+				.toString());
 		try {
 			return (entities == null ? null : entities.get(0));
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
@@ -70,15 +78,18 @@ public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 			q.append("e.rowId='").append(rowID).append("'");
 		}
 
-		String query = new StringBuilder("from ").append(baseClass.getSimpleName()).append(" as e where (").append(q.toString()).append(")").toString();
-		return sessionFactory.getCurrentSession().createQuery(query).list();
+		String query = new StringBuilder("from ")
+				.append(baseClass.getSimpleName()).append(" as e where (")
+				.append(q.toString()).append(")").toString();
+		return hibernateTemplate.find(query);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<T> retrieve() {
 		_assertBaseClassSetup(this);
-		return sessionFactory.getCurrentSession().createQuery(new StringBuilder("from ").append(baseClass.getSimpleName()).toString()).list();
+		return hibernateTemplate.find(new StringBuilder("from ").append(
+				baseClass.getSimpleName()).toString());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -86,7 +97,7 @@ public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 	@Transactional
 	public List<T> retrieve(String query) {
 		_assertBaseClassSetup(this);
-		return sessionFactory.getCurrentSession().createQuery(query).list();
+		return hibernateTemplate.find(query);
 	}
 
 	@Override
@@ -98,116 +109,62 @@ public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 	@Override
 	public Criteria formCriteria() {
 		_assertBaseClassSetup(this);
-		return sessionFactory.getCurrentSession().createCriteria(baseClass);
+		return (Criteria) DetachedCriteria.forClass(baseClass);
 	}
 
 	@Override
 	public Query formQuery(String query) {
-		return sessionFactory.getCurrentSession().createQuery(query);
+		return hibernateTemplate.getSessionFactory().getCurrentSession()
+				.createQuery(query);
 	}
 
 	@Override
 	public void update(T t) {
 		_assertBaseClassSetup(this);
-		Transaction txn = null;
 		try {
-			txn = getCurrentSession().beginTransaction();
-			sessionFactory.getCurrentSession().update(t);
-			txn.commit();
-		}
-		catch (HibernateException e) {
+			hibernateTemplate.update(t);
+		} catch (HibernateException e) {
 			throw new Error(e);
-		}
-		finally {
-			if (!txn.wasCommitted()) {
-				txn.rollback();
-			}
-			getCurrentSession().flush();
 		}
 	}
 
 	@Override
 	public void bulkUpdate(String query) {
-		Transaction txn = null;
 		try {
-			txn = getCurrentSession().beginTransaction();
-			sessionFactory.getCurrentSession().createQuery(query).executeUpdate();
-			txn.commit();
-		}
-		catch (HibernateException e) {
+			hibernateTemplate.bulkUpdate(query);
+		} catch (HibernateException e) {
 			throw new Error(e);
-		}
-		finally {
-			if (!txn.wasCommitted()) {
-				txn.rollback();
-			}
-			getCurrentSession().flush();
 		}
 	}
 
 	@Override
 	public void saveOrUpdate(T t) {
 		_assertBaseClassSetup(this);
-		Transaction txn = null;
 		try {
-			txn = getCurrentSession().beginTransaction();
-			sessionFactory.getCurrentSession().saveOrUpdate(t);
-			
-			
-			
-			
-			txn.commit();
-		}
-		catch (HibernateException e) {
+			hibernateTemplate.saveOrUpdate(t);
+		} catch (HibernateException e) {
 			throw new Error(e);
-		}
-		finally {
-			if (!txn.wasCommitted()) {
-				txn.rollback();
-			}
-			getCurrentSession().flush();
 		}
 	}
 
 	@Override
 	public void merge(T t) {
 		_assertBaseClassSetup(this);
-		Transaction txn = null;
 		try {
-			txn = getCurrentSession().beginTransaction();
-			sessionFactory.getCurrentSession().merge(t);
-			txn.commit();
-		}
-		catch (HibernateException e) {
+			hibernateTemplate.merge(t);
+		} catch (HibernateException e) {
 			throw new Error(e);
-		}
-		finally {
-			if (!txn.wasCommitted()) {
-				txn.rollback();
-			}
-			getCurrentSession().flush();
 		}
 	}
 
 	@Override
 	public void delete(T t) {
 		_assertBaseClassSetup(this);
-
 		if (null != t) {
-			Transaction txn = null;
 			try {
-				txn = getCurrentSession().beginTransaction();
-				sessionFactory.getCurrentSession().delete(t);
-				txn.commit();
-			}
-			catch (HibernateException e) {
+				hibernateTemplate.delete(t);
+			} catch (HibernateException e) {
 				throw new Error(e);
-			}
-			finally {
-				if (!txn.wasCommitted()) {
-					txn.rollback();
-				}
-				getCurrentSession().flush();
 			}
 		}
 	}
@@ -216,23 +173,13 @@ public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 	@Override
 	public void delete(String id) {
 		_assertBaseClassSetup(this);
-		T t = (T) sessionFactory.getCurrentSession().load(baseClass, id);
+		T t = (T) hibernateTemplate.load(baseClass, id);
 
 		if (null != t) {
-			Transaction txn = null;
 			try {
-				txn = getCurrentSession().beginTransaction();
-				sessionFactory.getCurrentSession().delete(t);
-				txn.commit();
-			}
-			catch (HibernateException e) {
+				hibernateTemplate.delete(t);
+			} catch (HibernateException e) {
 				throw new Error(e);
-			}
-			finally {
-				if (!txn.wasCommitted()) {
-					txn.rollback();
-				}
-				getCurrentSession().flush();
 			}
 		}
 	}
@@ -242,13 +189,11 @@ public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 		Transaction txn = null;
 		try {
 			txn = getCurrentSession().beginTransaction();
-			sessionFactory.getCurrentSession().createQuery(query).executeUpdate();
+			getCurrentSession().createQuery(query).executeUpdate();
 			txn.commit();
-		}
-		catch (HibernateException e) {
+		} catch (HibernateException e) {
 			throw new Error(e);
-		}
-		finally {
+		} finally {
 			if (!txn.wasCommitted()) {
 				txn.rollback();
 			}
@@ -258,7 +203,8 @@ public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 
 	private static <T> void _assertBaseClassSetup(GenericHibernateDAOImpl<T> dao) {
 		if (dao.baseClass == null)
-			throw new RuntimeException("Base class for the DAO has not been specified yet. Please use setBaseClass to specify the base POJO class for this DAO.");
+			throw new RuntimeException(
+					"Base class for the DAO has not been specified yet. Please use setBaseClass to specify the base POJO class for this DAO.");
 	}
 
 	public Class<T> getBaseClass() {
@@ -270,16 +216,18 @@ public class GenericHibernateDAOImpl<T> implements IGenericHibernateDAO<T> {
 		return this;
 	}
 
-	public SessionFactory getSessionFactory() {
-		return sessionFactory;
-	}
-
-	public void setSessionFactory(SessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
+	@Override
+	public Session getCurrentSession() {
+		return hibernateTemplate.getSessionFactory().getCurrentSession();
 	}
 
 	@Override
-	public Session getCurrentSession() {
-		return sessionFactory.getCurrentSession();
+	public SessionFactory getSessionFactory() {
+		return hibernateTemplate.getSessionFactory();
+	}
+
+	@Override
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		hibernateTemplate.setSessionFactory(sessionFactory);
 	}
 }

@@ -9,7 +9,7 @@
 		<param-name>contextConfigLocation</param-name>
 		<param-value>/WEB-INF/spring/root-context.xml,
 		classpath:dbcontext.xml,
-       /WEB-INF/spring/dao.cfg.xml
+       classpath:dao.cfg.xml
 		</param-value>
 	</context-param>
 
