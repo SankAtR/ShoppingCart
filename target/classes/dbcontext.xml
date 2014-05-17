@@ -1,0 +1,74 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd
+        http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location">
+			<value>classpath:jdbc.properties</value>
+		</property>
+	</bean>
+
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<!--Driver name to connect to the database -->
+		<property name="driverClass">
+			<value>${jdbc.driver}</value>
+		</property>
+		<!--DB URL -->
+		<property name="jdbcUrl">
+			<value>${jdbc.url}</value>
+		</property>
+		<!--DB User used to connect to the schema -->
+		<property name="user">
+			<value>${jdbc.username}</value>
+		</property>
+		<!--Password required to access for the above user -->
+		<property name="password">
+			<value>${jdbc.password}</value>
+		</property>
+		<!-- configuration pool via c3p0 -->
+	</bean>
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+
+<property name="configLocation">
+<value>classpath:hibernate.cfg.xml</value>
+</property>
+		<property name="configurationClass">
+			<value>org.hibernate.cfg.AnnotationConfiguration</value>
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${jdbc.dialect}</prop>
+				<!-- <prop key="hibernate.show_sql">true</prop> -->
+				<!-- <prop key="hibernate.format_sql">true</prop> -->
+				<prop key="hibernate.validator.apply_to_ddl">
+					false
+				</prop>
+				<prop key="hibernate.validator.autoregister_listeners">
+					false
+				</prop>
+				<prop key="hibernate.search.autoregister_listeners">
+					false
+				</prop>
+				<prop key="hibernate.show_sql">true</prop>
+			</props>
+		</property>
+	</bean>
+
+
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager" />
+</beans>  
